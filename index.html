@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC 2 Compliance Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=Epilogue:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<style>
+/* ── THEME TOKENS ── */
+[data-theme="light"] {
+  --bg:       #f5f4f0;
+  --bg2:      #ffffff;
+  --bg3:      #eeece8;
+  --sidebar:  #1a2535;
+  --sidebar2: #243044;
+  --sidebar3: #2e3d54;
+  --s-text:   #9aacc0;
+  --s-bright: #dce8f4;
+  --s-border: rgba(255,255,255,0.07);
+  --panel:    #ffffff;
+  --border:   #e2e0db;
+  --border2:  #cbc8c0;
+  --text:     #1e2530;
+  --text2:    #5a6070;
+  --text3:    #9098a8;
+  --bright:   #0d111a;
+  --em:       #0e6e54;
+  --em-bg:    #e4f5ef;
+  --em-light: #1a9e78;
+  --amber:    #8c5200;
+  --amber-bg: #fff3e0;
+  --amber-l:  #c47a00;
+  --blue:     #1a4a9e;
+  --blue-bg:  #e8eeff;
+  --blue-l:   #2563eb;
+  --red:      #b5192d;
+  --red-bg:   #ffeef1;
+  --purple:   #5e35b1;
+  --purple-bg:#f0ebff;
+  --purple-l: #7c52d6;
+  --teal:     #0d6e7a;
+  --teal-bg:  #e4f5f7;
+  --shadow:   0 1px 3px rgba(0,0,0,0.07), 0 6px 20px rgba(0,0,0,0.05);
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.05);
+}
+[data-theme="dark"] {
+  --bg:       #10141c;
+  --bg2:      #161c28;
+  --bg3:      #1c2438;
+  --sidebar:  #0c1018;
+  --sidebar2: #111520;
+  --sidebar3: #171d2c;
+  --s-text:   #607080;
+  --s-bright: #c8daea;
+  --s-border: rgba(255,255,255,0.05);
+  --panel:    #161c28;
+  --border:   #222a38;
+  --border2:  #2c3848;
+  --text:     #b8c8d8;
+  --text2:    #6878a0;
+  --text3:    #404e66;
+  --bright:   #e8f0fa;
+  --em:       #22c99a;
+  --em-bg:    #08201a;
+  --em-light: #2adba8;
+  --amber:    #f0a030;
+  --amber-bg: #201408;
+  --amber-l:  #f0a030;
+  --blue:     #4d80f0;
+  --blue-bg:  #0a1430;
+  --blue-l:   #6090ff;
+  --red:      #f04060;
+  --red-bg:   #200810;
+  --purple:   #9060f0;
+  --purple-bg:#160c30;
+  --purple-l: #a880ff;
+  --teal:     #20b0c0;
+  --teal-bg:  #081820;
+  --shadow:   0 1px 3px rgba(0,0,0,0.3), 0 6px 20px rgba(0,0,0,0.2);
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.2);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: background .25s, color .25s;
+}
+
+/* ── LAYOUT ── */
+.app { display:flex; flex:1; min-height:100vh; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: var(--sidebar);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  transition: background .25s;
+  flex-shrink: 0;
+}
+.sidebar::-webkit-scrollbar { width:3px; }
+.sidebar::-webkit-scrollbar-thumb { background:var(--sidebar3); }
+
+.sb-header {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--s-border);
+}
+.sb-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.sb-icon {
+  width: 32px; height: 32px;
+  background: var(--em-light);
+  display: flex; align-items:center; justify-content:center;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.sb-icon svg { width:16px; height:16px; stroke:#fff; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.sb-title {
+  font-family: 'Fraunces', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--s-bright);
+  letter-spacing: -.01em;
+  line-height: 1.1;
+}
+.sb-sub {
+  font-size: 10px;
+  color: var(--s-text);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Type toggle in sidebar */
+.sb-type-toggle {
+  padding: 14px 20px 0;
+}
+.sb-type-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--s-text);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 7px;
+}
+.type-btns {
+  display: flex;
+  background: var(--sidebar2);
+  border-radius: 5px;
+  padding: 3px;
+  gap: 2px;
+}
+.type-btn {
+  flex: 1;
+  font-family: 'Epilogue', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 8px;
+  border-radius: 3px;
+  border: none;
+  background: transparent;
+  color: var(--s-text);
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .01em;
+  text-align: center;
+}
+.type-btn.on { background: var(--em-light); color: #fff; }
+
+/* Sidebar nav */
+.sb-nav-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--s-text);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  padding: 18px 20px 8px;
+}
+
+.sb-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all .12s;
+  border-left: 2px solid transparent;
+  position: relative;
+}
+.sb-nav-item:hover { background: var(--sidebar2); }
+.sb-nav-item.active {
+  background: var(--sidebar2);
+  border-left-color: var(--em-light);
+}
+.sb-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sb-nav-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--s-text);
+  flex: 1;
+  line-height: 1.2;
+  transition: color .12s;
+}
+.sb-nav-item.active .sb-nav-name,
+.sb-nav-item:hover .sb-nav-name { color: var(--s-bright); }
+.sb-nav-count {
+  font-size: 10px;
+  color: var(--s-text);
+  font-weight: 600;
+  background: var(--sidebar3);
+  padding: 1px 7px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.sb-nav-pct {
+  font-size: 9px;
+  color: var(--em-light);
+  font-weight: 600;
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+
+.sb-mini-bar {
+  margin: 2px 20px 0;
+  height: 2px;
+  background: var(--sidebar3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.sb-mini-fill { height: 100%; background: var(--em-light); transition: width .4s; border-radius: 2px; }
+
+/* Sidebar footer */
+.sb-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid var(--s-border);
+}
+.sb-overall {
+  font-size: 10px;
+  color: var(--s-text);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-weight: 600;
+}
+.sb-pct-big {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--em-light);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.sb-overall-bar { height: 4px; background: var(--sidebar3); border-radius: 4px; overflow: hidden; display: flex; }
+.sob-done { background: var(--em-light); height:100%; transition: flex .5s; }
+.sob-wip  { background: var(--amber-l);  height:100%; transition: flex .5s; }
+.sob-plan { background: var(--purple-l); height:100%; transition: flex .5s; }
+.sob-none { background: transparent; height:100%; flex:1; }
+
+/* ── MAIN ── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* Top bar */
+.topbar {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+  transition: background .25s;
+}
+.tb-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tb-breadcrumb {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+}
+.tb-breadcrumb span { color: var(--text2); }
+.tb-sep { color: var(--border2); margin: 0 4px; }
+
+.tb-actions { display:flex; gap:7px; align-items:center; }
+
+.btn {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  padding: 7px 15px;
+  border-radius: 5px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-em { background:var(--em-light); color:#fff; border-color:var(--em-light); }
+.btn-em:hover { background:var(--em); border-color:var(--em); }
+.btn-outline { background:transparent; color:var(--text2); border-color:var(--border2); }
+.btn-outline:hover { border-color:var(--em-light); color:var(--em-light); }
+.btn-ghost { background:transparent; color:var(--text3); border-color:transparent; }
+.btn-ghost:hover { background:var(--bg3); color:var(--text); }
+.btn-danger { background:transparent; color:var(--red); border-color:var(--red-bg); }
+.btn-danger:hover { background:var(--red-bg); }
+
+.theme-btn {
+  width:34px; height:34px; border-radius:50%;
+  border: 1.5px solid var(--border2);
+  background: var(--bg2);
+  cursor: pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition: all .15s; flex-shrink:0;
+}
+.theme-btn:hover { border-color:var(--em-light); }
+.theme-btn svg { width:15px; height:15px; stroke:var(--text3); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+
+/* ── CONTENT ── */
+.content { padding: 28px; flex:1; }
+
+/* Category header */
+.cat-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.cat-title-block {}
+.cat-eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 5px;
+}
+.cat-title {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(22px, 3vw, 32px);
+  font-weight: 700;
+  color: var(--bright);
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  margin-bottom: 5px;
+}
+.cat-desc { font-size: 13px; color: var(--text2); max-width: 600px; line-height: 1.6; }
+
+.cat-stat-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.stat-chip {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.sc-total  { background:var(--bg3); color:var(--text2); }
+.sc-done   { background:var(--em-bg); color:var(--em); }
+.sc-wip    { background:var(--amber-bg); color:var(--amber-l); }
+.sc-plan   { background:var(--purple-bg); color:var(--purple-l); }
+
+/* Progress strip */
+.cat-progress {
+  margin-bottom: 28px;
+}
+.cp-track {
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  margin-bottom: 8px;
+}
+.cp-done { background:var(--em-light); height:100%; transition:flex .5s; }
+.cp-wip  { background:var(--amber-l); height:100%; transition:flex .5s; }
+.cp-plan { background:var(--purple-l); height:100%; transition:flex .5s; }
+.cp-none { background:transparent; height:100%; flex:1; }
+
+.cp-legend { display:flex; gap:16px; flex-wrap:wrap; }
+.cpl-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text3); font-weight:500; }
+.cpl-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+/* Criteria section header */
+.criteria-group { margin-bottom: 28px; }
+.cg-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.cg-code {
+  font-family: 'Fraunces', serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--em-light);
+  letter-spacing: .01em;
+  flex-shrink: 0;
+}
+.cg-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bright);
+}
+.cg-desc { font-size: 11px; color: var(--text3); margin-left: auto; font-style: italic; }
+
+/* Task rows */
+.task-rows { display: flex; flex-direction: column; gap: 2px; }
+.trow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all .12s;
+  border-left: 3px solid transparent;
+}
+.trow:hover { border-color: var(--border2); transform: translateX(2px); }
+.trow.done  { border-left-color: var(--em-light); }
+.trow.wip   { border-left-color: var(--amber-l); }
+.trow.plan  { border-left-color: var(--purple-l); }
+
+.t-status {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  transition: all .12s;
+}
+.trow .t-status      { background:var(--bg3); color:var(--text3); }
+.trow.done .t-status { background:var(--em-bg); color:var(--em-light); }
+.trow.wip  .t-status { background:var(--amber-bg); color:var(--amber-l); }
+.trow.plan .t-status { background:var(--purple-bg); color:var(--purple-l); }
+
+.t-name { font-size: 13px; color: var(--text); flex:1; line-height: 1.4; }
+.trow.done .t-name { color: var(--text3); text-decoration: line-through; text-decoration-color: var(--border2); }
+
+.t-type-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.t-type-badge.ii { background:var(--blue-bg); color:var(--blue-l); }
+
+.t-label {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: all .12s;
+}
+.trow      .t-label { background:var(--bg3); color:var(--text3); }
+.trow.done .t-label { background:var(--em-bg); color:var(--em); }
+.trow.wip  .t-label { background:var(--amber-bg); color:var(--amber-l); }
+.trow.plan .t-label { background:var(--purple-bg); color:var(--purple-l); }
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.filt {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border2);
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .01em;
+}
+.filt:hover { border-color:var(--em-light); color:var(--em-light); }
+.filt.on { background:var(--em-light); color:#fff; border-color:var(--em-light); }
+
+/* Type II info banner */
+.type2-banner {
+  background: var(--blue-bg);
+  border: 1px solid var(--blue-bg);
+  border-left: 3px solid var(--blue-l);
+  border-radius: 5px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  display: none;
+}
+.type2-banner.show { display: flex; gap: 10px; align-items: flex-start; }
+.t2b-icon { color: var(--blue-l); font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.t2b-text { font-size: 12px; color: var(--blue-l); line-height: 1.5; }
+.t2b-text strong { font-weight: 700; }
+
+/* ── OVERVIEW PAGE ── */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.ov-card {
+  background: var(--panel);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all .15s;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+.ov-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:8px 8px 0 0; }
+.ov-card:hover { border-color:var(--border2); box-shadow:var(--shadow); transform:translateY(-2px); }
+.ov-card.mandatory::after {
+  content: 'MANDATORY';
+  position: absolute;
+  top: 12px; right: 12px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--em);
+  background: var(--em-bg);
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+.ov-code { font-family:'Fraunces',serif; font-size:11px; color:var(--text3); margin-bottom:8px; letter-spacing:.02em; }
+.ov-name { font-family:'Fraunces',serif; font-size:17px; font-weight:700; color:var(--bright); margin-bottom:5px; letter-spacing:-.01em; }
+.ov-desc { font-size:11px; color:var(--text2); line-height:1.5; margin-bottom:14px; }
+.ov-chips { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:12px; }
+.ov-chip { font-size:10px; font-weight:700; padding:3px 9px; border-radius:12px; }
+.ov-bar { height:4px; background:var(--bg3); border-radius:4px; display:flex; overflow:hidden; }
+.ovb-done { background:var(--em-light); transition:flex .5s; }
+.ovb-wip  { background:var(--amber-l); transition:flex .5s; }
+.ovb-plan { background:var(--purple-l); transition:flex .5s; }
+
+/* KPI banner on overview */
+.kpi-banner {
+  display: grid;
+  grid-template-columns: repeat(5,1fr);
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.kpi-b {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+.kpi-b-val {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.kpi-b-lbl { font-size: 10px; font-weight: 600; color:var(--text3); text-transform:uppercase; letter-spacing:.08em; }
+
+/* Toast */
+.toast {
+  position:fixed; bottom:20px; right:20px;
+  background:var(--panel); border:1.5px solid var(--em-light); color:var(--em);
+  font-family:'Epilogue',sans-serif; font-size:12px; font-weight:600;
+  padding:10px 16px; border-radius:6px; box-shadow:var(--shadow);
+  z-index:9999; display:none; animation:su .2s ease;
+}
+@keyframes su { from{transform:translateY(8px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+@media(max-width:768px) {
+  .sidebar { display:none; }
+  .kpi-banner { grid-template-columns:repeat(3,1fr); }
+  .overview-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sb-header">
+    <div class="sb-logo">
+      <div class="sb-icon">
+        <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </div>
+      <div>
+        <div class="sb-title">SOC 2</div>
+      </div>
+    </div>
+    <div class="sb-sub">Trust Services Criteria</div>
+  </div>
+
+  <div class="sb-type-toggle">
+    <div class="sb-type-label">Report Type</div>
+    <div class="type-btns">
+      <button class="type-btn on" onclick="setType('I',this)">Type I</button>
+      <button class="type-btn" onclick="setType('II',this)">Type II</button>
+    </div>
+  </div>
+
+  <div class="sb-nav-label">Trust Service Criteria</div>
+  <div id="sbNav"></div>
+
+  <div class="sb-footer">
+    <div class="sb-overall">Overall Completion</div>
+    <div class="sb-pct-big" id="sbPct">0.0%</div>
+    <div class="sb-overall-bar">
+      <div class="sob-done" id="sobDone" style="flex:0"></div>
+      <div class="sob-wip"  id="sobWip"  style="flex:0"></div>
+      <div class="sob-plan" id="sobPlan" style="flex:0"></div>
+      <div class="sob-none"></div>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-breadcrumb">SOC 2 <span class="tb-sep">/</span> <span id="tbCrumb">Overview</span></div>
+    </div>
+    <div class="tb-actions">
+      <button class="btn btn-outline" onclick="markAllPlanned()">Set All Planned</button>
+      <button class="btn btn-em" onclick="exportPDF()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export PDF
+      </button>
+      <button class="btn btn-outline" onclick="exportJSON()">JSON</button>
+      <button class="btn btn-danger" onclick="resetAll()">Reset</button>
+      <button class="theme-btn" onclick="toggleTheme()">
+        <svg viewBox="0 0 24 24"><path id="themeIconPath" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" id="mainContent"></div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+
+const CATEGORIES = [
+  {
+    id:'security', code:'CC', name:'Security', mandatory:true,
+    color:'#1a9e78',
+    desc:'The system is protected against unauthorized access, use, or modification. This is the only mandatory category — all SOC 2 reports must include it.',
+    criteria:[
+      {
+        code:'CC1', name:'Control Environment',
+        desc:'Commitment to integrity, ethical values, and competence',
+        tasks:[
+          {t:'Define and communicate the organisation\'s commitment to integrity and ethical values',ii:false},
+          {t:'Establish a board or oversight body responsible for internal controls',ii:false},
+          {t:'Define organisational structure, reporting lines, and authority',ii:false},
+          {t:'Document HR policies covering hiring, onboarding, and termination security requirements',ii:false},
+          {t:'Hold individuals accountable for their internal control responsibilities',ii:false},
+          {t:'Evidence that management monitors and enforces the control environment over the period',ii:true},
+          {t:'Board meeting minutes or equivalent demonstrating oversight activity',ii:true},
+        ]
+      },
+      {
+        code:'CC2', name:'Communication & Information',
+        desc:'Quality information is generated and communicated to support control objectives',
+        tasks:[
+          {t:'Define information quality requirements for security-relevant data',ii:false},
+          {t:'Establish internal communication channels for security incidents and policy updates',ii:false},
+          {t:'Establish external communication channels for customers to report issues',ii:false},
+          {t:'Provide evidence of recurring security communications over the audit period',ii:true},
+          {t:'Document instances of external communications regarding security matters',ii:true},
+        ]
+      },
+      {
+        code:'CC3', name:'Risk Assessment',
+        desc:'Risks to achieving objectives are identified and assessed',
+        tasks:[
+          {t:'Define business objectives relevant to security, availability, and data protection',ii:false},
+          {t:'Conduct and document a formal risk assessment covering all in-scope systems',ii:false},
+          {t:'Identify and assess risks introduced by changes (new vendors, systems, processes)',ii:false},
+          {t:'Assess the risk of fraud in security-related processes',ii:false},
+          {t:'Maintain risk register with ownership and treatment decisions',ii:false},
+          {t:'Evidence that risk assessments were updated and reviewed during the audit period',ii:true},
+          {t:'Document changes assessed for risk during the period with outcomes',ii:true},
+        ]
+      },
+      {
+        code:'CC4', name:'Monitoring Activities',
+        desc:'Controls are monitored and deficiencies are communicated and corrected',
+        tasks:[
+          {t:'Conduct ongoing evaluations of controls to verify they are operating effectively',ii:false},
+          {t:'Communicate control deficiencies to responsible parties and track remediation',ii:false},
+          {t:'Evidence of continuous monitoring reports or reviews conducted during the period',ii:true},
+          {t:'Document remediation of any identified control deficiencies with timelines',ii:true},
+        ]
+      },
+      {
+        code:'CC5', name:'Control Activities',
+        desc:'Control activities are selected and developed to mitigate risks',
+        tasks:[
+          {t:'Select and implement controls that address identified risks to objectives',ii:false},
+          {t:'Implement technology controls (logical access, change management, etc.) aligned to risk',ii:false},
+          {t:'Deploy controls through policies, procedures, and technology — not just policy',ii:false},
+          {t:'Demonstrate controls were operating consistently throughout the audit period',ii:true},
+          {t:'Provide evidence of policy reviews or control updates during the period',ii:true},
+        ]
+      },
+      {
+        code:'CC6', name:'Logical & Physical Access',
+        desc:'Logical and physical access to assets is restricted to authorised individuals',
+        tasks:[
+          {t:'Implement access controls based on least-privilege and need-to-know principles',ii:false},
+          {t:'Enforce MFA for all remote access and privileged accounts',ii:false},
+          {t:'Implement processes for provisioning, modifying, and de-provisioning user access',ii:false},
+          {t:'Conduct formal access reviews at least annually',ii:false},
+          {t:'Implement encryption at rest and in transit for sensitive data',ii:false},
+          {t:'Restrict and monitor physical access to data centres and server rooms',ii:false},
+          {t:'Log and monitor all logical access to system components',ii:false},
+          {t:'Implement controls to identify and address vulnerabilities (patching programme)',ii:false},
+          {t:'Provide access provisioning and de-provisioning logs from the audit period',ii:true},
+          {t:'Evidence of at least one formal access review completed during the period',ii:true},
+          {t:'Vulnerability scan results and patching evidence from the audit period',ii:true},
+          {t:'Physical access logs for restricted facilities during the period',ii:true},
+        ]
+      },
+      {
+        code:'CC7', name:'System Operations',
+        desc:'System operations are managed to achieve the entity\'s objectives',
+        tasks:[
+          {t:'Detect and respond to security events using logging and alerting',ii:false},
+          {t:'Define and document an incident response plan and test it',ii:false},
+          {t:'Implement controls to detect malware and unauthorised software',ii:false},
+          {t:'Establish backup and recovery procedures for critical systems',ii:false},
+          {t:'Define and maintain a business continuity / disaster recovery plan',ii:false},
+          {t:'Evidence of security events detected and responded to during the period',ii:true},
+          {t:'Incident response test results or tabletop exercise records from the period',ii:true},
+          {t:'Backup restoration test evidence from the audit period',ii:true},
+        ]
+      },
+      {
+        code:'CC8', name:'Change Management',
+        desc:'Changes to infrastructure, data, software, and procedures are managed',
+        tasks:[
+          {t:'Establish a formal change management policy with approval gates',ii:false},
+          {t:'Require testing and approval before promoting changes to production',ii:false},
+          {t:'Separate development, staging, and production environments',ii:false},
+          {t:'Control use of emergency/out-of-band changes with post-hoc review',ii:false},
+          {t:'Evidence of change requests, approvals, and deployments from the audit period',ii:true},
+          {t:'Evidence of code reviews or peer approvals for changes during the period',ii:true},
+        ]
+      },
+      {
+        code:'CC9', name:'Risk Mitigation',
+        desc:'Risk from vendors and business disruption is identified and mitigated',
+        tasks:[
+          {t:'Assess and document security risks posed by all third-party vendors',ii:false},
+          {t:'Include security requirements in vendor contracts (DPA, SLAs, right to audit)',ii:false},
+          {t:'Conduct ongoing vendor risk reviews proportionate to risk level',ii:false},
+          {t:'Evidence of vendor assessments or reviews conducted during the audit period',ii:true},
+        ]
+      },
+    ]
+  },
+  {
+    id:'availability', code:'A', name:'Availability', mandatory:false,
+    color:'#1a4a9e',
+    desc:'The system is available for operation and use as committed or agreed. Required if downtime could impact customers.',
+    criteria:[
+      {
+        code:'A1', name:'Availability',
+        desc:'System availability commitments are met',
+        tasks:[
+          {t:'Define and document availability commitments (SLAs, uptime targets)',ii:false},
+          {t:'Monitor system performance and availability with automated alerting',ii:false},
+          {t:'Implement redundancy and failover for critical components',ii:false},
+          {t:'Maintain and test disaster recovery procedures at least annually',ii:false},
+          {t:'Communicate planned maintenance windows to affected customers',ii:false},
+          {t:'Provide uptime reports and availability metrics from the audit period',ii:true},
+          {t:'Evidence of incident response and recovery actions for outages in the period',ii:true},
+          {t:'DR test results from the audit period demonstrating successful recovery',ii:true},
+        ]
+      }
+    ]
+  },
+  {
+    id:'processing', code:'PI', name:'Processing Integrity', mandatory:false,
+    color:'#8c5200',
+    desc:'System processing is complete, valid, accurate, timely, and authorised. Required for payment processors, data pipelines, and similar.',
+    criteria:[
+      {
+        code:'PI1', name:'Processing Integrity',
+        desc:'Processing is complete, valid, accurate, timely, and authorised',
+        tasks:[
+          {t:'Define and document processing integrity objectives and commitments',ii:false},
+          {t:'Implement input validation controls to reject incomplete or invalid data',ii:false},
+          {t:'Implement output validation and reconciliation to detect processing errors',ii:false},
+          {t:'Log all processing activities with sufficient detail for audit and investigation',ii:false},
+          {t:'Define and implement error handling procedures for processing failures',ii:false},
+          {t:'Establish authorisation controls to ensure only approved processing occurs',ii:false},
+          {t:'Evidence of processing logs and error rates reviewed during the audit period',ii:true},
+          {t:'Results of data reconciliation or integrity checks run during the period',ii:true},
+        ]
+      }
+    ]
+  },
+  {
+    id:'confidentiality', code:'C', name:'Confidentiality', mandatory:false,
+    color:'#5e35b1',
+    desc:'Information designated as confidential is protected as committed. Required when sensitive business or customer data is processed.',
+    criteria:[
+      {
+        code:'C1', name:'Confidentiality',
+        desc:'Confidential information is protected from unauthorised disclosure',
+        tasks:[
+          {t:'Define and classify what constitutes confidential information in scope',ii:false},
+          {t:'Implement access controls to restrict confidential data to authorised personnel',ii:false},
+          {t:'Encrypt confidential data at rest and in transit',ii:false},
+          {t:'Implement DLP controls to prevent unauthorised disclosure',ii:false},
+          {t:'Establish confidentiality agreements with employees and contractors (NDAs)',ii:false},
+          {t:'Define and communicate procedures for disposing of confidential data',ii:false},
+          {t:'Evidence that confidential data access logs were reviewed during the period',ii:true},
+          {t:'Evidence of NDA and confidentiality agreement completions during the period',ii:true},
+        ]
+      }
+    ]
+  },
+  {
+    id:'privacy', code:'P', name:'Privacy', mandatory:false,
+    color:'#0d6e7a',
+    desc:'Personal information is collected, used, retained, disclosed, and disposed of in conformity with commitments and AICPA Privacy Principles.',
+    criteria:[
+      {
+        code:'P1', name:'Notice & Communication',
+        desc:'Individuals are informed about privacy practices',
+        tasks:[
+          {t:'Publish a privacy notice describing what data is collected and why',ii:false},
+          {t:'Communicate privacy practices before or at the time of data collection',ii:false},
+          {t:'Update privacy notice when practices change and notify affected individuals',ii:false},
+          {t:'Evidence that privacy notice was reviewed and kept current during the period',ii:true},
+        ]
+      },
+      {
+        code:'P2', name:'Choice & Consent',
+        desc:'Individuals can make choices about their personal data',
+        tasks:[
+          {t:'Obtain explicit consent before collecting or using personal data for secondary purposes',ii:false},
+          {t:'Provide mechanisms for individuals to opt out of data collection or marketing',ii:false},
+          {t:'Document and honour consent choices and opt-outs',ii:false},
+          {t:'Evidence of consent management records and opt-out processing during the period',ii:true},
+        ]
+      },
+      {
+        code:'P3', name:'Collection',
+        desc:'Personal information is collected only for stated purposes',
+        tasks:[
+          {t:'Collect only personal data that is necessary for the stated purposes (data minimisation)',ii:false},
+          {t:'Avoid collecting sensitive categories of data without explicit justification and consent',ii:false},
+          {t:'Document all sources and methods of personal data collection',ii:false},
+          {t:'Review data collection practices against stated purposes during the period',ii:true},
+        ]
+      },
+      {
+        code:'P4', name:'Use, Retention & Disposal',
+        desc:'Personal information is used, retained, and disposed of appropriately',
+        tasks:[
+          {t:'Use personal data only for the purposes for which it was collected',ii:false},
+          {t:'Define and enforce data retention schedules for all personal data categories',ii:false},
+          {t:'Implement secure disposal procedures for personal data at end of retention',ii:false},
+          {t:'Evidence of data disposal activities and retention enforcement during the period',ii:true},
+        ]
+      },
+      {
+        code:'P5', name:'Access',
+        desc:'Individuals can access and correct their personal information',
+        tasks:[
+          {t:'Provide individuals with a mechanism to request access to their personal data',ii:false},
+          {t:'Respond to data subject access requests within the committed timeframe',ii:false},
+          {t:'Allow individuals to correct inaccuracies in their personal data',ii:false},
+          {t:'Log and evidence handling of data subject requests during the audit period',ii:true},
+        ]
+      },
+      {
+        code:'P6', name:'Disclosure to Third Parties',
+        desc:'Personal information is disclosed only with consent or as required',
+        tasks:[
+          {t:'Disclose personal data to third parties only with consent or legal basis',ii:false},
+          {t:'Assess privacy practices of third parties before sharing personal data',ii:false},
+          {t:'Include data processing agreements with all third parties receiving personal data',ii:false},
+          {t:'Evidence of third-party disclosures and DPAs in place during the audit period',ii:true},
+        ]
+      },
+      {
+        code:'P7', name:'Quality',
+        desc:'Personal information is accurate, complete, and relevant',
+        tasks:[
+          {t:'Implement controls to maintain the accuracy and completeness of personal data',ii:false},
+          {t:'Provide individuals with the ability to flag and correct inaccurate data',ii:false},
+          {t:'Evidence of data quality controls operating during the audit period',ii:true},
+        ]
+      },
+      {
+        code:'P8', name:'Monitoring & Enforcement',
+        desc:'Privacy commitments are monitored and enforced',
+        tasks:[
+          {t:'Assign clear ownership for privacy compliance',ii:false},
+          {t:'Establish a process for handling privacy complaints and enquiries',ii:false},
+          {t:'Conduct periodic assessments to verify compliance with privacy commitments',ii:false},
+          {t:'Evidence of privacy monitoring activities and complaint handling during the period',ii:true},
+        ]
+      }
+    ]
+  }
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let states={}, reportType='I', activeCategory='security', taskFilter='all', theme='light';
+const SKEY='soc2-v1';
+
+async function load() {
+  try {
+    const r=await window.storage.get(SKEY);
+    if(r?.value){const d=JSON.parse(r.value);states=d.s||{};reportType=d.rt||'I';activeCategory=d.ac||'security';theme=d.t||'light';}
+  } catch(e){}
+}
+async function save() {
+  try{await window.storage.set(SKEY,JSON.stringify({s:states,rt:reportType,ac:activeCategory,t:theme}));}catch(e){}
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+const tid=(catId,cIdx,tIdx)=>`${catId}::${cIdx}::${tIdx}`;
+const getS=(catId,cIdx,tIdx)=>states[tid(catId,cIdx,tIdx)]||'none';
+const isVisible=t=>reportType==='II'||!t.ii;
+const nextS=s=>({none:'plan',plan:'wip',wip:'done',done:'none'}[s]);
+const labelOf=s=>({done:'Completed',wip:'In Progress',plan:'Planned',none:'Not Started'}[s]);
+const iconOf=s=>({done:'✓',wip:'◑',plan:'○',none:'·'}[s]);
+
+function catStats(cat) {
+  let done=0,wip=0,plan=0,total=0;
+  cat.criteria.forEach((cr,ci)=>{
+    cr.tasks.forEach((t,ti)=>{
+      if(!isVisible(t))return; total++;
+      const s=getS(cat.id,ci,ti);
+      if(s==='done')done++; else if(s==='wip')wip++; else if(s==='plan')plan++;
+    });
+  });
+  return{total,done,wip,plan,none:total-done-wip-plan};
+}
+function globalStats() {
+  let done=0,wip=0,plan=0,total=0;
+  CATEGORIES.forEach(c=>{const s=catStats(c);done+=s.done;wip+=s.wip;plan+=s.plan;total+=s.total;});
+  return{total,done,wip,plan,none:total-done-wip-plan};
+}
+function toast(msg,col='var(--em)') {
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.style.color=col;el.style.borderColor=col;el.style.display='block';
+  clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',2400);
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const s=globalStats(),t=s.total||1;
+  document.getElementById('sbPct').textContent=(s.done/t*100).toFixed(1)+'%';
+  document.getElementById('sobDone').style.flex=s.done;
+  document.getElementById('sobWip').style.flex=s.wip;
+  document.getElementById('sobPlan').style.flex=s.plan;
+
+  document.getElementById('sbNav').innerHTML=CATEGORIES.map(cat=>{
+    const cs=catStats(cat),ct=cs.total||1;
+    const pct=Math.round(cs.done/ct*100);
+    return `
+    <div class="sb-nav-item${activeCategory===cat.id?' active':''}" onclick="navTo('${cat.id}')">
+      <div class="sb-dot" style="background:${cat.color}"></div>
+      <div class="sb-nav-name">${cat.name}${cat.mandatory?'':' <span style="font-size:9px;opacity:.6">(opt)</span>'}</div>
+      <div class="sb-nav-pct">${pct}%</div>
+    </div>
+    <div class="sb-mini-bar" style="margin-bottom:8px">
+      <div class="sb-mini-fill" style="width:${pct}%;background:${cat.color}"></div>
+    </div>`;
+  }).join('');
+}
+
+// ── OVERVIEW PAGE ─────────────────────────────────────────────────────────
+function renderOverview() {
+  const gs=globalStats(),gt=gs.total||1;
+  const kpis=[
+    {label:'Total Tasks',val:gs.total,color:'var(--em-light)'},
+    {label:'Completed',val:gs.done,color:'var(--em)'},
+    {label:'In Progress',val:gs.wip,color:'var(--amber-l)'},
+    {label:'Planned',val:gs.plan,color:'var(--purple-l)'},
+    {label:'Not Started',val:gs.none,color:'var(--text3)'},
+  ];
+  const kpiHtml=`<div class="kpi-banner">${kpis.map(k=>`
+    <div class="kpi-b">
+      <div class="kpi-b-val" style="color:${k.color}">${k.val}</div>
+      <div class="kpi-b-lbl">${k.label}</div>
+    </div>`).join('')}</div>`;
+
+  const cardsHtml=`<div class="overview-grid">${CATEGORIES.map(cat=>{
+    const cs=catStats(cat),ct=cs.total||1;
+    const pct=Math.round(cs.done/ct*100);
+    return `
+    <div class="ov-card${cat.mandatory?' mandatory':''}" onclick="navTo('${cat.id}')" style="--c:${cat.color}">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${cat.color};border-radius:8px 8px 0 0"></div>
+      <div class="ov-code">${cat.code} — ${reportType==='I'?'Type I':'Type II'}</div>
+      <div class="ov-name">${cat.name}</div>
+      <div class="ov-desc">${cat.desc}</div>
+      <div class="ov-chips">
+        <span class="ov-chip" style="background:${cat.color}18;color:${cat.color}">${cs.total} tasks</span>
+        ${cs.done?`<span class="ov-chip" style="background:var(--em-bg);color:var(--em)">✓ ${cs.done}</span>`:''}
+        ${cs.wip?`<span class="ov-chip" style="background:var(--amber-bg);color:var(--amber-l)">◑ ${cs.wip}</span>`:''}
+        ${cs.plan?`<span class="ov-chip" style="background:var(--purple-bg);color:var(--purple-l)">○ ${cs.plan}</span>`:''}
+      </div>
+      <div class="ov-bar">
+        <div class="ovb-done" style="flex:${cs.done};background:${cat.color}"></div>
+        <div class="ovb-wip"  style="flex:${cs.wip};background:var(--amber-l)"></div>
+        <div class="ovb-plan" style="flex:${cs.plan};background:var(--purple-l)"></div>
+        <div style="flex:${cs.none}"></div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+
+  document.getElementById('mainContent').innerHTML = kpiHtml + `
+    <div class="sec-title-row" style="margin-bottom:16px">
+      <span style="font-family:'Fraunces',serif;font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">
+        Trust Service Criteria — ${reportType==='I'?'Type I (Design Effectiveness)':'Type II (Design + Operating Effectiveness)'}
+      </span>
+    </div>
+  ` + cardsHtml;
+}
+
+// ── CATEGORY PAGE ─────────────────────────────────────────────────────────
+function renderCategory(catId) {
+  const cat=CATEGORIES.find(x=>x.id===catId);
+  if(!cat){renderOverview();return;}
+  const cs=catStats(cat),ct=cs.total||1;
+  const dp=cs.done/ct,wp=cs.wip/ct,pp=cs.plan/ct;
+
+  const banner=reportType==='II'?`
+  <div class="type2-banner show">
+    <div class="t2b-icon">ⓘ</div>
+    <div class="t2b-text"><strong>Type II view active.</strong> Tasks marked <span style="font-weight:700;color:var(--blue-l)">TYPE II</span> relate to operating effectiveness evidence — demonstrating that controls operated consistently over the audit period.</div>
+  </div>`:'';
+
+  const criteriaHtml=cat.criteria.map((cr,ci)=>{
+    const visibleTasks=cr.tasks.filter(t=>isVisible(t));
+    const filtered=visibleTasks.filter(t2=>{
+      const s=getS(cat.id,ci,cr.tasks.indexOf(t2));
+      return taskFilter==='all'||s===taskFilter||(taskFilter==='none'&&s==='none');
+    });
+    if(filtered.length===0&&taskFilter!=='all') return '';
+    return `
+    <div class="criteria-group">
+      <div class="cg-header">
+        <div class="cg-code">${cr.code}</div>
+        <div class="cg-name">${cr.name}</div>
+        <div class="cg-desc">${cr.desc}</div>
+      </div>
+      <div class="task-rows">
+        ${filtered.map(t2=>{
+          const origIdx=cr.tasks.indexOf(t2);
+          const s=getS(cat.id,ci,origIdx);
+          return `
+          <div class="trow ${s}" onclick="cycleTask('${cat.id}',${ci},${origIdx})">
+            <div class="t-status">${iconOf(s)}</div>
+            <div class="t-name">${t2.t}</div>
+            ${t2.ii?`<div class="t-type-badge ii">Type II</div>`:''}
+            <div class="t-label">${labelOf(s)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('mainContent').innerHTML=`
+    <div class="cat-header">
+      <div class="cat-title-block">
+        <div class="cat-eyebrow">${cat.code} — ${cat.mandatory?'Mandatory':'Optional'} Category</div>
+        <div class="cat-title">${cat.name}</div>
+        <div class="cat-desc">${cat.desc}</div>
+      </div>
+      <div class="cat-stat-chips">
+        <div class="stat-chip sc-total">${cs.total} Tasks</div>
+        <div class="stat-chip sc-done">✓ ${cs.done} Done</div>
+        ${cs.wip?`<div class="stat-chip sc-wip">◑ ${cs.wip} WIP</div>`:''}
+        ${cs.plan?`<div class="stat-chip sc-plan">○ ${cs.plan} Planned</div>`:''}
+      </div>
+    </div>
+    <div class="cat-progress">
+      <div class="cp-track">
+        <div class="cp-done" style="flex:${dp*100}"></div>
+        <div class="cp-wip"  style="flex:${wp*100}"></div>
+        <div class="cp-plan" style="flex:${pp*100}"></div>
+        <div class="cp-none" style="flex:${(1-dp-wp-pp)*100}"></div>
+      </div>
+      <div class="cp-legend">
+        <div class="cpl-item"><div class="cpl-dot" style="background:var(--em-light)"></div>${(dp*100).toFixed(1)}% Completed</div>
+        <div class="cpl-item"><div class="cpl-dot" style="background:var(--amber-l)"></div>${(wp*100).toFixed(1)}% In Progress</div>
+        <div class="cpl-item"><div class="cpl-dot" style="background:var(--purple-l)"></div>${(pp*100).toFixed(1)}% Planned</div>
+      </div>
+    </div>
+    ${banner}
+    <div class="filter-bar">
+      <button class="filt${taskFilter==='all'?' on':''}"  onclick="setFilt('all',this)">All</button>
+      <button class="filt${taskFilter==='none'?' on':''}" onclick="setFilt('none',this)">Not Started</button>
+      <button class="filt${taskFilter==='plan'?' on':''}" onclick="setFilt('plan',this)">Planned</button>
+      <button class="filt${taskFilter==='wip'?' on':''}"  onclick="setFilt('wip',this)">In Progress</button>
+      <button class="filt${taskFilter==='done'?' on':''}" onclick="setFilt('done',this)">Completed</button>
+    </div>
+    ${criteriaHtml}`;
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────
+function navTo(catId) {
+  activeCategory=catId; taskFilter='all';
+  document.getElementById('tbCrumb').textContent=catId==='overview'?'Overview':CATEGORIES.find(x=>x.id===catId)?.name||'';
+  renderSidebar(); renderCategory(catId); save();
+}
+
+function setFilt(f,btn){
+  taskFilter=f; renderCategory(activeCategory);
+}
+
+async function cycleTask(catId,ci,ti) {
+  const cat=CATEGORIES.find(x=>x.id===catId);
+  if(reportType==='I'&&cat.criteria[ci].tasks[ti].ii)return;
+  const k=tid(catId,ci,ti),cur=states[k]||'none',nxt=nextS(cur);
+  if(nxt==='none')delete states[k]; else states[k]=nxt;
+  await save(); renderSidebar(); renderCategory(catId);
+}
+
+async function setType(t,btn) {
+  reportType=t;
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  await save(); renderSidebar();
+  if(activeCategory==='overview') renderOverview(); else renderCategory(activeCategory);
+}
+
+async function markAllPlanned() {
+  CATEGORIES.forEach(cat=>cat.criteria.forEach((cr,ci)=>cr.tasks.forEach((t,ti)=>{
+    if(reportType==='I'&&t.ii)return;
+    const k=tid(cat.id,ci,ti);
+    if(!states[k]||states[k]==='none')states[k]='plan';
+  })));
+  await save(); renderSidebar();
+  if(activeCategory==='overview') renderOverview(); else renderCategory(activeCategory);
+  toast('All visible tasks set to Planned');
+}
+
+async function resetAll() {
+  if(!confirm('Reset all progress? This cannot be undone.'))return;
+  states={}; await save(); renderSidebar();
+  if(activeCategory==='overview') renderOverview(); else renderCategory(activeCategory);
+  toast('Progress reset','var(--red)');
+}
+
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  const p=document.getElementById('themeIconPath');
+  if(t==='dark') p.setAttribute('d','M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z');
+  else p.setAttribute('d','M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z');
+}
+async function toggleTheme(){
+  theme=theme==='light'?'dark':'light'; applyTheme(theme); await save();
+}
+
+// ── JSON EXPORT ───────────────────────────────────────────────────────────
+function exportJSON(){
+  const s=globalStats();
+  const out={
+    metadata:{standard:'SOC 2',reportType,exportedAt:new Date().toISOString(),version:'1.0.0'},
+    statistics:{totalTasks:s.total,completedTasks:s.done,inProgressTasks:s.wip,plannedTasks:s.plan,notStartedTasks:s.none,completionPct:(s.done/(s.total||1)*100).toFixed(1)+'%'},
+    categories:Object.fromEntries(CATEGORIES.map(cat=>{
+      const cs=catStats(cat),ov={};
+      cat.criteria.forEach((cr,ci)=>cr.tasks.forEach((_,ti)=>{const st=getS(cat.id,ci,ti);if(st!=='none')ov[`${ci}::${ti}`]=st;}));
+      return[cat.id,{name:cat.name,mandatory:cat.mandatory,taskOverrides:ov,stats:cs}];
+    }))
+  };
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}));
+  a.download=`soc2-progress-${new Date().toISOString().split('T')[0]}.json`;a.click();
+  toast('JSON exported');
+}
+
+// ── PDF EXPORT ────────────────────────────────────────────────────────────
+function exportPDF(){
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,m=18;
+  let y=m;
+  const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const gs=globalStats(),gt=gs.total||1;
+
+  const C_BG='#f5f4f0',C_HEAD='#1a2535',C_EM='#1a9e78',C_AMBER='#c47a00',C_PURPLE='#7c52d6';
+  const C_DARK='#0d111a',C_MID='#5a6070',C_LITE='#9098a8',C_BORD='#e2e0db';
+
+  // Cover header
+  doc.setFillColor(C_HEAD); doc.rect(0,0,W,20,'F');
+  doc.setFillColor(C_EM); doc.rect(0,0,5,20,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor('#ffffff');
+  doc.text('SOC 2 — TRUST SERVICES CRITERIA PROGRESS REPORT',m+4,9);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor('rgba(255,255,255,0.6)');
+  doc.text(`Report Type: ${reportType==='I'?'Type I — Design Effectiveness':'Type II — Design + Operating Effectiveness'}  ·  ${today}`, m+4, 15);
+  y=30;
+
+  // Title block
+  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(C_DARK);
+  doc.text('SOC 2 Compliance Progress', m, y); y+=8;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(C_MID);
+  doc.text(`Generated: ${today}  ·  Report Type: ${reportType==='I'?'Type I':'Type II'}`, m, y); y+=12;
+
+  // KPI row
+  const kpis=[
+    {l:'Total',v:gs.total,c:C_EM},
+    {l:'Completed',v:gs.done,c:C_EM},
+    {l:'In Progress',v:gs.wip,c:C_AMBER},
+    {l:'Planned',v:gs.plan,c:C_PURPLE},
+    {l:'Not Started',v:gs.none,c:C_LITE},
+  ];
+  const kw=(W-m*2)/5;
+  kpis.forEach((k,i)=>{
+    const x=m+i*kw;
+    doc.setFillColor('#f0efeb'); doc.roundedRect(x,y,kw-2,16,1,1,'F');
+    doc.setFillColor(k.c); doc.roundedRect(x,y,kw-2,2,0.5,0.5,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(k.c);
+    doc.text(String(k.v),x+(kw-2)/2,y+10,{align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(C_LITE);
+    doc.text(k.l.toUpperCase(),x+(kw-2)/2,y+15,{align:'center'});
+  });
+  y+=22;
+
+  // Global progress bar
+  const bw=W-m*2;
+  doc.setFillColor('#e8e6e0'); doc.roundedRect(m,y,bw,3,0.8,0.8,'F');
+  const df=gs.done/gt,wf=gs.wip/gt,pf=gs.plan/gt;
+  let bx=m;
+  if(df>0){doc.setFillColor(C_EM);doc.roundedRect(bx,y,bw*df,3,0.8,0.8,'F');bx+=bw*df;}
+  if(wf>0){doc.setFillColor(C_AMBER);doc.rect(bx,y,bw*wf,3,'F');bx+=bw*wf;}
+  if(pf>0){doc.setFillColor(C_PURPLE);doc.rect(bx,y,bw*pf,3,'F');}
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(C_EM);
+  doc.text(`${(df*100).toFixed(1)}% Complete`,W-m,y+2.5,{align:'right'});
+  y+=10;
+
+  // Per-category sections
+  CATEGORIES.forEach(cat=>{
+    const cs=catStats(cat);
+    const allTasks=[];
+    cat.criteria.forEach((cr,ci)=>{
+      cr.tasks.forEach((t2,ti)=>{
+        if(!isVisible(t2))return;
+        const s=getS(cat.id,ci,ti);
+        allTasks.push([cr.code, t2.t, t2.ii?'Type II':'Type I', labelOf(s)]);
+      });
+    });
+    if(allTasks.length===0) return;
+
+    const neededH=16+allTasks.length*7+10;
+    if(y+neededH>275){doc.addPage();y=m;}
+
+    // Category header
+    doc.setFillColor(cat.color+'20'); doc.roundedRect(m,y,W-m*2,10,1.5,1.5,'F');
+    doc.setFillColor(cat.color); doc.roundedRect(m,y,4,10,0.5,0.5,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(C_DARK);
+    doc.text(`${cat.code}  ${cat.name}${cat.mandatory?' (Mandatory)':' (Optional)'}`, m+6, y+6.5);
+    const cpct=cs.total>0?Math.round(cs.done/cs.total*100):0;
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(cat.color);
+    doc.text(`${cs.done}/${cs.total} — ${cpct}%`, W-m, y+6.5,{align:'right'});
+    y+=13;
+
+    doc.autoTable({
+      startY:y,
+      head:[['Criteria','Task','Level','Status']],
+      body:allTasks,
+      margin:{left:m,right:m},
+      theme:'plain',
+      styles:{fontSize:7.5,cellPadding:{top:2.5,bottom:2.5,left:3,right:3},textColor:C_DARK,lineColor:C_BORD,lineWidth:0.2},
+      headStyles:{fillColor:'#f0efeb',textColor:C_LITE,fontStyle:'bold',fontSize:7},
+      columnStyles:{
+        0:{cellWidth:14,halign:'center',textColor:cat.color,fontStyle:'bold'},
+        1:{cellWidth:'auto'},
+        2:{cellWidth:16,halign:'center'},
+        3:{cellWidth:26,halign:'center'},
+      },
+      didParseCell(data){
+        if(data.section==='body'&&data.column.index===3){
+          const v=data.cell.raw;
+          if(v==='Completed'){data.cell.styles.textColor=C_EM;data.cell.styles.fontStyle='bold';}
+          if(v==='In Progress'){data.cell.styles.textColor=C_AMBER;data.cell.styles.fontStyle='bold';}
+          if(v==='Planned'){data.cell.styles.textColor=C_PURPLE;data.cell.styles.fontStyle='bold';}
+          if(v==='Not Started'){data.cell.styles.textColor=C_LITE;}
+        }
+        if(data.section==='body'&&data.column.index===2&&data.cell.raw==='Type II'){
+          data.cell.styles.textColor='#2563eb';data.cell.styles.fontStyle='bold';
+        }
+      },
+    });
+    y=doc.lastAutoTable.finalY+8;
+  });
+
+  const pages=doc.getNumberOfPages();
+  for(let p=1;p<=pages;p++){
+    doc.setPage(p);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(C_LITE);
+    doc.line(m,285,W-m,285);
+    doc.text(`SOC 2 Progress Report  ·  ${today}  ·  Page ${p} of ${pages}`,W/2,289,{align:'center'});
+  }
+
+  doc.save(`soc2-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  toast('PDF report downloaded');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+async function init(){
+  await load();
+  applyTheme(theme);
+  document.querySelectorAll('.type-btn').forEach(b=>{
+    const isII=b.textContent==='II';
+    b.classList.toggle('on',(reportType==='II')===isII);
+  });
+  renderSidebar();
+  renderCategory(activeCategory);
+  document.getElementById('tbCrumb').textContent=CATEGORIES.find(x=>x.id===activeCategory)?.name||'Overview';
+}
+init();
+</script>
+</body>
+</html>
